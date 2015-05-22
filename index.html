@@ -1,0 +1,64 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>WebRTC Demo</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+    <!-- Add your site or application content here -->
+    <div class="container">
+        <h1>WebRTC Demo</h1>
+        <div class="row">
+            <div class="col-xs-12">
+                <table id="pm-status-container" class="table table-bordered">
+                    <tr>
+                        <td class="col-sm-9">Websockets connection</td>
+                        <td class="col-sm-3 pm-status">
+                            <span id="connectionStatus" class="label label-danger">closed</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-sm-9">P2P connection</td>
+                        <td class="col-sm-3 pm-status">
+                            <span class="label label-danger">closed</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col-sm-9">Data channel</td>
+                        <td class="col-sm-3 pm-status">
+                            <span class="label label-danger">closed</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="pm-action-group btn-group col-xs-12" role="group" aria-label="...">
+                <button id="connect" type="button" class="btn btn-default">Connect</button>
+                <button id="createRoom" type="button" class="btn btn-default">Create Room</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="embed-responsive embed-responsive-16by9 col-sm-6">
+                <video id="pm-my-video" autoplay="true"></video>
+            </div>
+            <div class="embed-responsive embed-responsive-16by9 col-sm-6">
+                <video id="pm-other-video" autoplay="true"></video>
+            </div>
+        </div>
+    </div>
+    <script src="js/webrtc.js"></script>
+    <script src="js/boot.js"></script>
+</body>
+
+</html>

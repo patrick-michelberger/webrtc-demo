@@ -1,0 +1,25 @@
+.btn {
+    border-radius: 0;
+}
+
+.label {
+    font-size: 1.0em;
+    border-radius: 0;
+}
+
+.pm-action-group {
+    padding: 15px;
+}
+
+#pm-status-container td.pm-status {
+	position: relative;
+	padding: 0;
+}
+
+
+#pm-status-container .label {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    line-height: 2.0em;
+}
