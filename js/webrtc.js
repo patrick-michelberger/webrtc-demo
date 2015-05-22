@@ -2,7 +2,8 @@ function WebRTC() {
     // PRIVATE ATTRIBUTES
     var self = this;
     var connection = false;
-    var myStream  = null;
+    var myStream = null;
+    var clients = null;
 
     var peerConfig = {
         "iceServer": [{
@@ -67,7 +68,27 @@ function WebRTC() {
                 console.log(message);
                 return;
             }
-            console.log("message: ", message);
+            console.log("message data: ", data);
+            switch (data.type) {
+                // the server has created a room and returns the room-ID
+                case 'initClients':
+                    clients = data.payload;
+                    var ev = new Event("init_clients", {
+                        "bubbles": true,
+                        "cancelable": false
+                    });
+                    document.dispatchEvent(ev);
+                    break;
+                case 'newClient':
+                    client = data.payload;
+                    clients.push(client);
+                    var ev = new Event("add_client", {
+                        "bubbles": true,
+                        "cancelable": false
+                    });
+                    document.dispatchEvent(ev);
+                    break;
+            }
         }
     };
 
@@ -99,16 +120,20 @@ function WebRTC() {
         }
 
         getUserMedia(constraints, function(stream) {
-        	myStream = stream;
-        	if (success) {
-        		success(myStream);
-        	}
+            myStream = stream;
+            if (success) {
+                success(myStream);
+            }
         }, function(error) {
-        	console.log("getUserMedia failed: ", error);
-        	if (fail) {
-        		fail();
-        	}
+            console.log("getUserMedia failed: ", error);
+            if (fail) {
+                fail();
+            }
         });
 
     };
+
+    this.getClients = function() {
+        return clients;
+    }
 }

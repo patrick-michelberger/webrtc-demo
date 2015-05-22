@@ -2,8 +2,8 @@ var port = 63949,
     webSocketServer = require('websocket').server,
     http = require('http'),
     uuid = require('uuid'),
-    rooms = {};
-clients = [];
+    rooms = {},
+    clients = [];
 
 var server = http.createServer(function(req, res) {});
 
@@ -17,10 +17,21 @@ var wsServer = new webSocketServer({
 
 wsServer.on('request', function(request) {
     var connection = request.accept(null, request.origin);
+
+    clients.forEach(function(client) {
+        send(client, {
+            "type" : "newClient",
+            "payload" : connection.remoteAddress
+        });
+    });
+
     clients.push(connection);
 
     send(connection, {
-        "clients" : clients
+        "type" :  "initClients",
+        "payload": clients.map(function(client) {
+            return client.remoteAddress;
+        })
     });
 
     connection.on('message', function(message) {
@@ -55,6 +66,16 @@ wsServer.on('request', function(request) {
         } else {
 
         }
+    });
+
+    connection.on('close', function(evt) {
+        // close user connection
+        console.log((new Date()) + " Peer disconnected.");
+        var index = clients.indexOf(connection);
+        if (index >= 0)
+            clients.splice(index, 1);
+        else
+            trace("Delete disconnected peer fail.");
     });
 });
 

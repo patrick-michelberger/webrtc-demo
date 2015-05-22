@@ -8,6 +8,9 @@ var label_connection_status = document.getElementById("connectionStatus");
 // Videos
 var my_video = document.getElementById("pm-my-video");
 
+var container_clients = document.getElementById("pm-clients-container");
+
+
 // Event listeners
 // websocket events 
 document.addEventListener('socket_connected', function(socketEvent) {
@@ -23,6 +26,27 @@ document.addEventListener('socket_closed', function(socketEvent) {
     label_connection_status.classList.remove("label-success");
     label_connection_status.classList.add("label-danger");
     btn_connect.style.display = "block";
+});
+
+document.addEventListener('init_clients', function(socketEvent) {
+    var clients = WebRTC.getClients();
+    for (var i = 0; i < clients.length; i++)  {
+        var node = document.createElement("LI");
+        var textNode = document.createTextNode(clients[i]);
+        node.appendChild(textNode);
+        container_clients.appendChild(node);
+    }
+});
+
+document.addEventListener('add_client', function(socketEvent) {
+    var clients = WebRTC.getClients();
+    var new_client = clients[container_clients.children.length];
+    
+    var node = document.createElement("LI");
+    var textNode = document.createTextNode(new_client);
+    node.appendChild(textNode);
+    container_clients.appendChild(node);
+
 });
 
 // UI events
