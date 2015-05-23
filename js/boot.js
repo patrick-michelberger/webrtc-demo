@@ -4,12 +4,11 @@ var btn_connect = document.getElementById("connect");
 
 // Labels 
 var label_connection_status = document.getElementById("connectionStatus");
+var label_room_id = document.getElementById("pm-room-id");
 
 // Videos
 var my_video = document.getElementById("pm-my-video");
-
 var container_clients = document.getElementById("pm-clients-container");
-
 
 // Event listeners
 // websocket events 
@@ -18,7 +17,7 @@ document.addEventListener('socket_connected', function(socketEvent) {
     label_connection_status.classList.remove("label-danger");
     label_connection_status.classList.add("label-success");
     btn_connect.style.display = "none";
-
+    btn_create_room.style.display = "block";
 });
 
 document.addEventListener('socket_closed', function(socketEvent) {
@@ -26,6 +25,7 @@ document.addEventListener('socket_closed', function(socketEvent) {
     label_connection_status.classList.remove("label-success");
     label_connection_status.classList.add("label-danger");
     btn_connect.style.display = "block";
+    btn_create_room.style.display = "none";
 });
 
 document.addEventListener('init_clients', function(socketEvent) {
@@ -41,12 +41,16 @@ document.addEventListener('init_clients', function(socketEvent) {
 document.addEventListener('add_client', function(socketEvent) {
     var clients = WebRTC.getClients();
     var new_client = clients[container_clients.children.length];
-    
+
     var node = document.createElement("LI");
     var textNode = document.createTextNode(new_client);
     node.appendChild(textNode);
     container_clients.appendChild(node);
+});
 
+document.addEventListener('room_created', function(socketEvent) {
+    label_room_id.innerHTML = WebRTC.getRoomId();
+    btn_create_room.style.display = 'none';
 });
 
 // UI events
@@ -55,7 +59,7 @@ btn_create_room.addEventListener('click', function(e) {
     var success = function(myStream) {
         my_video.src = URL.createObjectURL(myStream);
         // create a room
-        //WebRTC.createRoom();
+        WebRTC.createRoom();
     };
     WebRTC.getMedia({
         audio: true,

@@ -59,6 +59,16 @@ wsServer.on('request', function(request) {
                     return send(rooms[roomId].creatorConnection, data);
                     break;
                 case 'offer':
+                    console.log("offer received");
+                    if (rooms[data.roomId].partnerConnection) {
+                            var data = {
+                                type: "error",
+                                payload: "room is already full"
+                            };
+                            return send(connection, data);
+                    }
+                    rooms[data.roomId].partnerConnection = this;
+                    return send(rooms[data.roomId].creatorConnection, data);
                     break;
                 default:
                     break;

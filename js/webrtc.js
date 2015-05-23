@@ -2,8 +2,11 @@ function WebRTC() {
     // PRIVATE ATTRIBUTES
     var self = this;
     var connection = false;
-    var myStream = null;
+    var peerConnection = false;
+    var myStream = false;
+    var otherStream = false;
     var clients = null;
+    var roomId = false;
 
     var peerConfig = {
         "iceServer": [{
@@ -26,6 +29,43 @@ function WebRTC() {
             console.log('There is no connection to the websocket server');
             return false;
         }
+    };
+
+    var createOffer = function() {
+        if (typeof(RTCPeerConnection) === 'function') {
+            peerConnection = new RTCPeerConnection(peerConfig);
+        } else if (typeof(webkitRTCPeerConnection) === 'function') {
+            peerConnection = new webkitRTCPeerConnection(peerConfig);
+        }
+
+        peerConnection.addStream(myStream);
+
+        peerConnection.onaddstream = function(e) {
+            console.log("stream added");
+            otherStream = e.stream;
+        }
+
+        peerConnection.onicecandidate = function(icecandidate) {
+            console.log("icecandidate send to room: " + roomId);
+            // send candidates to other peer
+            var data = {
+                type: "iceCandidate",
+                roomId: roomId,
+                payload: icecandidate
+            };
+            sendToServer(data);
+        }
+
+        peerConnection.createOffer(function(SDP) {
+            peerConnection.setLocalDescription(SDP);
+            var data = {
+                type: "offer",
+                roomId: roomId,
+                payload: SDP
+            };
+            console.log("send offer");
+            sendToServer(data);
+        });
     };
 
     // PUBLIC METHODS
@@ -88,6 +128,15 @@ function WebRTC() {
                     });
                     document.dispatchEvent(ev);
                     break;
+                case 'roomCreated':
+                    roomId = data.payload;
+                    var ev = new Event("room_created", {
+                        "bubbles": true,
+                        "cancelable": false
+                    });
+                    document.dispatchEvent(ev);
+                    break;
+
             }
         }
     };
@@ -101,6 +150,11 @@ function WebRTC() {
         // send data-object to server
         return sendToServer(data);
     };
+
+    this.joinRoom = function() {
+        roomId = id;
+        createOffer();
+    }
 
     this.getMedia = function(constraints, success, fail) {
         // set default constraints 
@@ -131,6 +185,10 @@ function WebRTC() {
             }
         });
 
+    };
+
+    this.getRoomId = function() {
+        return roomId;
     };
 
     this.getClients = function() {
