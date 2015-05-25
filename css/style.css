@@ -16,6 +16,10 @@
 	padding: 0;
 }
 
+#pm-input-room-id {
+    width: 500px;
+}
+
 
 #pm-status-container .label {
     position: absolute;

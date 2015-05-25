@@ -20,15 +20,15 @@ wsServer.on('request', function(request) {
 
     clients.forEach(function(client) {
         send(client, {
-            "type" : "newClient",
-            "payload" : connection.remoteAddress
+            "type": "newClient",
+            "payload": connection.remoteAddress
         });
     });
 
     clients.push(connection);
 
     send(connection, {
-        "type" :  "initClients",
+        "type": "initClients",
         "payload": clients.map(function(client) {
             return client.remoteAddress;
         })
@@ -61,20 +61,32 @@ wsServer.on('request', function(request) {
                 case 'offer':
                     console.log("offer received");
                     if (rooms[data.roomId].partnerConnection) {
-                            var data = {
-                                type: "error",
-                                payload: "room is already full"
-                            };
-                            return send(connection, data);
+                        var data = {
+                            type: "error",
+                            payload: "room is already full"
+                        };
+                        return send(connection, data);
                     }
                     rooms[data.roomId].partnerConnection = this;
                     return send(rooms[data.roomId].creatorConnection, data);
                     break;
                 default:
+                    if (this === rooms[data.roomId].partnerConnection) {
+                        console.log("send to creator: ", data.type);
+                        console.log("data: ", data);
+                        return send(rooms[data.roomId].creatorConnection, data);
+                    }
+                    console.log("send to partner: ", data.type);
+                    console.log("data: ", data);
+                    return send(rooms[data.roomId].partnerConnection, data);
                     break;
             }
         } else {
-
+            var data = {
+                type: 'error',
+                payload: 'ERROR FROM SERVER: Incorrect data or no data received'
+            };
+            send(connection, data);
         }
     });
 

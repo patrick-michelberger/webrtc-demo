@@ -7,12 +7,15 @@ function WebRTC() {
     var otherStream = false;
     var clients = null;
     var roomId = false;
+    var otherSDP = false;
+    var othersCandidates = [];
 
     var peerConfig = {
-        "iceServer": [{
-            url: "stun:stun.l.google.com:19302"
+        iceServers: [{
+            url: 'stun:stun.l.google.com:19302'
         }]
-    };
+    }; // set Google Stunserver
+
     var peerConstraints = {
         "optional": [{
             "DtlsSrtpKeyAgreement": true // set DTLS encrpytion
@@ -22,6 +25,7 @@ function WebRTC() {
     // PRIVATE METHODS
     // encode to JSON and send data to server
     var sendToServer = function(data) {
+        console.log("send to websocket server: ", data);
         try {
             connection.send(JSON.stringify(data));
             return true;
@@ -29,6 +33,52 @@ function WebRTC() {
             console.log('There is no connection to the websocket server');
             return false;
         }
+    };
+
+    var createRTCIceCandidate = function(candidate) {
+        var ice;
+        if (typeof(webkitRTCIceCandidate) === 'function') {
+            ice = new webkitRTCIceCandidate(candidate);
+        } else if (typeof(RTCIceCandidate) === 'function') {
+            ice = new RTCIceCandidate(candidate);
+        }
+        return ice;
+    };
+
+    var createRTCSessionDescription = function(sdp) {
+        var newSdp;
+        if (typeof(RTCSessionDescription) === 'function') {
+            newSdp = new RTCSessionDescription(sdp);
+        } else if (typeof(webkitRTCSessionDescription) === 'function') {
+            newSdp = new webkitRTCSessionDescription(sdp);
+        }
+        return newSdp;
+    };
+
+    var setIceCandidates = function(iceCandidate) {
+        console.log("setIceCandidates: ", iceCandidate);
+        // push icecandidate to array if no SDP of other guy is available
+        if (!otherSDP) {
+            othersCandidates.push(iceCandidate);
+        }
+        // add icecandidates immediately if not Firefox && if remoteDescription is set
+        if (otherSDP && iceCandidate && iceCandidate.candidate && iceCandidate.candidate !== null) {
+            console.log("iceCandidate: ", iceCandidate);
+            peerConnection.addIceCandidate(createRTCIceCandidate(iceCandidate));
+        }
+    };
+
+    var handshakeDone = function() {
+        var sessionDescription = createRTCSessionDescription(otherSDP);
+        console.log("RTCSessionDescription from otherSDP ", otherSDP);
+        console.log("peerConnection.setRemoteDescription()", sessionDescription);
+        peerConnection.setRemoteDescription(sessionDescription);
+        for (var i = 0; i < othersCandidates.length; i++) {
+            if (othersCandidates[i]) {
+                peerConnection.addIceCandidate(createRTCIceCandidate(othersCandidates[i]));
+            }
+        }
+        //TODO Event "p2pConnectionReady"
     };
 
     var createOffer = function() {
@@ -41,41 +91,95 @@ function WebRTC() {
         peerConnection.addStream(myStream);
 
         peerConnection.onaddstream = function(e) {
-            console.log("stream added");
             otherStream = e.stream;
+            var ev = new Event("stream_added", {
+                "bubbles": true,
+                "cancelable": false
+            });
+            document.dispatchEvent(ev);
         }
 
         peerConnection.onicecandidate = function(icecandidate) {
-            console.log("icecandidate send to room: " + roomId);
             // send candidates to other peer
+            console.log('icecandidate send to room ' + roomId);
+            console.log("icecandidate: ", icecandidate.candidate);
             var data = {
                 type: "iceCandidate",
                 roomId: roomId,
-                payload: icecandidate
+                payload: icecandidate.candidate
             };
             sendToServer(data);
         }
 
+        console.log("peerConnection.createOffer()");
         peerConnection.createOffer(function(SDP) {
+            console.log("peerConnection.setLocalDescription(SDP) ", SDP);
             peerConnection.setLocalDescription(SDP);
             var data = {
                 type: "offer",
                 roomId: roomId,
                 payload: SDP
             };
-            console.log("send offer");
+            sendToServer(data);
+        });
+    };
+
+    var createAnswer = function() {
+        if (typeof(RTCPeerConnection) === 'function') {
+            peerConnection = new RTCPeerConnection(peerConfig);
+        } else if (typeof(webkitRTCPeerConnection) === 'function') {
+            peerConnection = new webkitRTCPeerConnection(peerConfig);
+        }
+
+        peerConnection.addStream(myStream);
+        console.log("peerConnection.setRemoteDescription(otherSDP) ", otherSDP);
+        peerConnection.setRemoteDescription(createRTCSessionDescription(otherSDP));
+
+        peerConnection.onaddstream = function(e) {
+            otherStream = e.stream;
+            var ev = new Event("stream_added", {
+                "bubbles": true,
+                "cancelable": false
+            });
+            document.dispatchEvent(ev);
+        };
+        
+        peerConnection.onicecandidate = function(icecandidate) {
+            console.log('icecandidate send to room ' + roomId);
+            var data = {
+                type: 'iceCandidate',
+                roomId: roomId,
+                payload: icecandidate.candidate
+            };
+            sendToServer(data);
+        };
+
+        console.log("peerConnection.createAnswer()");
+        peerConnection.createAnswer(function(SDP) {
+            console.log("peerConnection.setLocalDescription(SDP) ", SDP);
+            peerConnection.setLocalDescription(SDP);
+            for (var i = 0; i < othersCandidates.length; i++) {
+                if (othersCandidates[i]) {
+                    peerConnection.addIceCandidate(createRTCIceCandidate(othersCandidates[i]));
+                }
+            }
+            // send SDP to other guy
+            var data = {
+                type: 'answer',
+                roomId: roomId,
+                payload: SDP
+            };
             sendToServer(data);
         });
     };
 
     // PUBLIC METHODS
     this.connectToSocket = function(wsUrl) {
-        // open the websocket
+        // open the WebSocket
         connection = new WebSocket(wsUrl);
 
         // connection was successful
         connection.onopen = function(event) {
-            console.log((new Date()) + ' Connection successfully established');
             var ev = new Event("socket_connected", {
                 "bubbles": true,
                 "cancelable": false
@@ -108,7 +212,6 @@ function WebRTC() {
                 console.log(message);
                 return;
             }
-            console.log("message data: ", data);
             switch (data.type) {
                 // the server has created a room and returns the room-ID
                 case 'initClients':
@@ -136,9 +239,23 @@ function WebRTC() {
                     });
                     document.dispatchEvent(ev);
                     break;
-
+                case 'offer':
+                    otherSDP = data.payload;
+                    createAnswer();
+                    break;
+                case 'answer':
+                    otherSDP = data.payload;
+                    handshakeDone();
+                    break;
+                case 'iceCandidate':
+                    setIceCandidates(data.payload);
+                    break;
             }
         }
+    };
+
+    this.getRoomId = function() {
+        return roomId;
     };
 
     this.createRoom = function() {
@@ -151,7 +268,7 @@ function WebRTC() {
         return sendToServer(data);
     };
 
-    this.joinRoom = function() {
+    this.joinRoom = function(id) {
         roomId = id;
         createOffer();
     }
@@ -166,10 +283,8 @@ function WebRTC() {
         }
 
         if (navigator.getUserMedia) {
-            console.log("prefix-less");
             getUserMedia = navigator.getUserMedia.bind(navigator);
         } else if (navigator.webkitGetUserMedia) {
-            console.log("webkit");
             getUserMedia = navigator.webkitGetUserMedia.bind(navigator);
         }
 
@@ -187,11 +302,12 @@ function WebRTC() {
 
     };
 
-    this.getRoomId = function() {
-        return roomId;
+    this.getOtherStream = function() {
+        return otherStream;
     };
 
     this.getClients = function() {
         return clients;
-    }
+    };
+
 }
