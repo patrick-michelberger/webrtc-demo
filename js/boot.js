@@ -82,7 +82,7 @@ btn_create_room.addEventListener('click', function(e) {
 btn_connect.addEventListener('click', function(e) {
     e.preventDefault();
     // connect to websocket server
-    WebRTC.connectToSocket('ws://localhost:63949');
+    WebRTC.connectToSocket('ws://' + location.hostname + ':63949');
 });
 
 btn_join_room.addEventListener('click', function(e) {
