@@ -18,11 +18,12 @@ function WebRTC() {
         }]
     };
 
-    var peerConstraints = {"optional":[]};
+    var peerConstraints = {
+        "optional": []
+    };
 
-    node http - server.js & node webSocketServer / server.js
-        // PRIVATE METHODS
-        // encode to JSON and send data to server
+    // PRIVATE METHODS
+    // encode to JSON and send data to server
     var sendToServer = function(data) {
         console.log("send to websocket server: ", data);
         try {
