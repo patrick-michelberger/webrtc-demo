@@ -11,15 +11,18 @@ function WebRTC() {
     var othersCandidates = [];
 
     var peerConfig = {
-        iceServers: [{
-            "url": "turn:turn01.uswest.xirsys.com:5349?transport=tcp",
-            "username": "1_035036b4-6769-11e5-9a40-d48eec181798",
-            "credential": "0350375e-6769-11e5-8c9d-0d49faea8878"
+        "iceServers": [{
+            "urls": ["turn:104.155.45.181:3478?transport=udp", "turn:104.155.45.181:3478?transport=tcp", "turn:104.155.45.181:3479?transport=udp", "turn:104.155.45.181:3479?transport=tcp"],
+            "username": "1443702398:525222532",
+            "credential": "NW6n90cJpvZYHLiYP7dpL78f+/4="
         }]
-    }; 
-    
-    // PRIVATE METHODS
-    // encode to JSON and send data to server
+    };
+
+    var peerConstraints = {"optional":[]};
+
+    node http - server.js & node webSocketServer / server.js
+        // PRIVATE METHODS
+        // encode to JSON and send data to server
     var sendToServer = function(data) {
         console.log("send to websocket server: ", data);
         try {
@@ -79,9 +82,9 @@ function WebRTC() {
 
     var createOffer = function() {
         if (typeof(RTCPeerConnection) === 'function') {
-            peerConnection = new RTCPeerConnection(peerConfig);
+            peerConnection = new RTCPeerConnection(peerConfig, peerConstraints);
         } else if (typeof(webkitRTCPeerConnection) === 'function') {
-            peerConnection = new webkitRTCPeerConnection(peerConfig);
+            peerConnection = new webkitRTCPeerConnection(peerConfig, peerConstraints);
         }
 
         peerConnection.addStream(myStream);
@@ -139,7 +142,7 @@ function WebRTC() {
             });
             document.dispatchEvent(ev);
         };
-        
+
         peerConnection.onicecandidate = function(icecandidate) {
             console.log('icecandidate send to room ' + roomId);
             var data = {
