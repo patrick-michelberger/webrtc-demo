@@ -12,16 +12,12 @@ function WebRTC() {
 
     var peerConfig = {
         iceServers: [{
-            url: 'stun:stun.l.google.com:19302'
+            "url": "turn:turn01.uswest.xirsys.com:5349?transport=tcp",
+            "username": "1_035036b4-6769-11e5-9a40-d48eec181798",
+            "credential": "0350375e-6769-11e5-8c9d-0d49faea8878"
         }]
-    }; // set Google Stunserver
-
-    var peerConstraints = {
-        "optional": [{
-            "DtlsSrtpKeyAgreement": true // set DTLS encrpytion
-        }]
-    };
-
+    }; 
+    
     // PRIVATE METHODS
     // encode to JSON and send data to server
     var sendToServer = function(data) {
