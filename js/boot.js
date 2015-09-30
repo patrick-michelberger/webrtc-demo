@@ -74,7 +74,6 @@ btn_create_room.addEventListener('click', function(e) {
         WebRTC.createRoom();
     };
     WebRTC.getMedia({
-        audio: true,
         video: true
     }, success);
 });
@@ -96,7 +95,6 @@ btn_join_room.addEventListener('click', function(e) {
         WebRTC.joinRoom(input_room_id.value);
     };
     WebRTC.getMedia({
-        audio: true,
         video: true
     }, success);
 });
